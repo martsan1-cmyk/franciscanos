@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Franciscanos de María · Escuela del Agradecimiento</title>
+<style>
+  :root{
+    --navy:#0b2a55; --navy2:#123d75; --sky:#5fd2f3; --gold:#ffd36b; --gold2:#f4b942;
+    --title-font:"Futura","Tw Cen MT","Century Gothic","Avenir Next",sans-serif;
+    --body-font:"Avenir Next","Century Gothic","Segoe UI",Helvetica,Arial,sans-serif;
+    --serif:"Palatino","Book Antiqua","Georgia",serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:var(--body-font);color:#fff;user-select:none;touch-action:manipulation;-ms-touch-action:manipulation}
+  body.nocursor{cursor:none}
+
+  #viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;touch-action:none}
+  #stage{position:relative;width:1920px;height:1080px;flex:none;transform-origin:center center;overflow:hidden;background:#000}
+
+  .slide{position:absolute;inset:0;opacity:0;visibility:hidden;transform:scale(1.015);
+         transition:opacity .7s ease, transform 1.2s ease, visibility 0s linear .7s}
+  .slide.active{opacity:1;visibility:visible;transform:scale(1);transition:opacity .7s ease, transform 1.2s ease}
+  .slide > img.full{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .slide.designed{background:url("img/bg.jpg") center/cover no-repeat}
+
+  .titlebar{display:inline-block;padding:14px 56px 18px;
+    background:linear-gradient(180deg,#6fdaf7 0%,#34a9dc 45%,#166fae 100%);
+    box-shadow:0 10px 28px rgba(0,30,70,.35), inset 0 2px 0 rgba(255,255,255,.45);
+    font-family:var(--title-font);font-weight:700;font-size:96px;line-height:1.1;color:#fff;letter-spacing:1px;
+    -webkit-text-stroke:7px #000;paint-order:stroke fill;text-shadow:5px 5px 0 rgba(0,0,0,.55)}
+  .titlebar.small{font-size:58px;padding:10px 40px 12px;-webkit-text-stroke:5px #000;text-shadow:4px 4px 0 rgba(0,0,0,.5)}
+
+  .panel{background:linear-gradient(180deg,rgba(11,42,85,.94),rgba(8,30,64,.95));
+    border:2px solid rgba(120,215,255,.55);border-radius:22px;
+    box-shadow:0 25px 60px rgba(0,20,50,.45), inset 0 1px 0 rgba(255,255,255,.15)}
+  .hl{color:var(--gold);font-weight:700}
+  .kicker{font-family:var(--title-font);font-weight:700;letter-spacing:6px;text-transform:uppercase;color:var(--navy);font-size:30px}
+
+  /* Propósito de esta semana */
+  #s-prop-semana .wrap{position:absolute;inset:40px 120px 40px;display:flex;flex-direction:column;align-items:center}
+  #s-prop-semana .titlebar{font-size:58px;padding:12px 40px 14px;white-space:nowrap;-webkit-text-stroke:5px #000;flex:none}
+  #s-prop-semana .pic{flex:1;min-height:0;margin-top:30px;display:flex;justify-content:center}
+  #s-prop-semana .pic img{height:100%;max-width:100%;object-fit:contain;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.45);border:3px solid rgba(255,255,255,.75)}
+  #s-prop-texto .right{position:absolute;left:190px;right:190px;top:55px;bottom:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  #s-prop-texto .titlebar{font-size:58px;padding:12px 40px 14px;white-space:nowrap;-webkit-text-stroke:5px #000}
+  #s-prop-texto .kicker{margin:40px 0 8px;font-size:25px;letter-spacing:4px;white-space:nowrap}
+  #s-prop-texto .sub{font-family:var(--title-font);font-size:46px;font-weight:700;color:var(--navy);margin:0 0 36px;white-space:nowrap}
+  #s-prop-texto .panel{padding:50px 80px;width:100%;text-align:left}
+  #s-prop-texto ul{list-style:none}
+  #s-prop-texto li{font-size:56px;line-height:1.32;padding-left:64px;position:relative;margin:0 0 30px}
+  #s-prop-texto li:last-child{margin-bottom:0}
+  #s-prop-texto li::before{content:"✠";position:absolute;left:0;top:2px;color:var(--gold);font-size:44px}
+
+  /* Palabra de Vida */
+  .pv-head{position:absolute;top:56px;left:0;right:0;text-align:center}
+  .pv-cap{position:absolute;top:168px;left:0;right:0;text-align:center;font-family:var(--title-font);font-weight:700;
+    font-size:34px;letter-spacing:3px;color:var(--navy)}
+  .pv-body{position:absolute;left:170px;right:170px;top:240px;bottom:80px;display:flex;align-items:center}
+  .pv-body .panel{width:100%;padding:56px 76px}
+  .pv-body p{font-size:48px;line-height:1.5;text-align:left}
+  .pv-body p.dense{font-size:42px;line-height:1.45}
+  .pv-body p + p{margin-top:28px}
+
+  #s-pv-intro .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 200px}
+  #s-pv-intro h2{font-family:var(--title-font);font-weight:700;font-size:78px;color:var(--navy);margin:46px 0 6px;line-height:1.1;white-space:nowrap}
+  #s-pv-intro .date{font-family:var(--title-font);font-weight:700;font-size:36px;letter-spacing:5px;color:#1d5f99;text-transform:uppercase}
+  #s-pv-intro .quote{margin-top:46px;padding:44px 80px;max-width:1450px}
+  #s-pv-intro .quote p{font-family:var(--serif);font-style:italic;font-size:50px;line-height:1.4}
+  #s-pv-intro .quote cite{display:block;margin-top:18px;font-family:var(--title-font);font-style:normal;font-weight:700;font-size:34px;color:var(--gold);letter-spacing:3px}
+
+  /* Propósito */
+  #s-proposito .rays{position:absolute;left:50%;top:60%;width:2600px;height:2600px;margin:-1300px 0 0 -1300px;
+    background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.16) 0deg 5deg,rgba(255,255,255,0) 5deg 15deg);
+    -webkit-mask-image:radial-gradient(circle,#000 0%,transparent 55%);mask-image:radial-gradient(circle,#000 0%,transparent 55%);
+    animation:spin 120s linear infinite;opacity:0;transition:opacity 2s}
+  #s-proposito.active .rays{opacity:1}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #s-proposito .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 190px;text-align:center}
+  #s-proposito .kicker{margin:40px 0 26px}
+  #s-proposito .panel{padding:60px 90px}
+  #s-proposito .panel p{font-size:58px;line-height:1.38}
+  #s-proposito .motto{margin-top:40px;font-family:var(--serif);font-style:italic;font-weight:700;font-size:96px;line-height:1.12;color:var(--gold);
+    -webkit-text-stroke:9px #0b2a55;paint-order:stroke fill;
+    text-shadow:0 0 30px rgba(255,200,80,.55),0 4px 0 rgba(90,50,0,.55);opacity:0;transform:translateY(20px)}
+  #s-proposito.active .motto{animation:rise 1.6s ease 1.1s forwards, glow 4s ease-in-out 2.7s infinite}
+  @keyframes rise{to{opacity:1;transform:none}}
+  @keyframes glow{50%{text-shadow:0 0 55px rgba(255,215,110,.9),0 4px 0 rgba(90,50,0,.55)}}
+
+  /* Momento de Agradecimiento */
+  #s-agradecer .body{position:absolute;left:150px;right:150px;top:160px;bottom:310px;display:flex;align-items:center}
+  #s-agradecer p.silencio{position:absolute;left:150px;right:150px;bottom:120px;margin:0;padding:26px 50px;text-align:center;font-size:48px;line-height:1.3;
+    color:#fff;background:rgba(6,22,48,.72);border:2px solid var(--gold);border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  #s-agradecer .sil{display:inline-block;padding:0 18px;border-radius:12px;background:var(--gold);color:var(--navy);font-weight:800;line-height:1.25}
+  #s-agradecer .panel{width:100%;padding:44px 70px}
+  #s-agradecer h3{font-family:var(--title-font);font-weight:700;font-size:64px;color:var(--gold);letter-spacing:2px;text-align:center}
+  #s-agradecer .lead{text-align:center;font-size:52px;font-weight:700;margin:4px 0 22px}
+  #s-agradecer p{font-size:46px;line-height:1.38}
+  #s-agradecer p + p{margin-top:18px}
+
+  /* Diapositivas de texto grande (Reflexión, Compartir, Vocaciones, Avisos) */
+  .tx-body{position:absolute;left:150px;right:150px;top:165px;bottom:60px;display:flex;align-items:center}
+  .tx-body .panel{width:100%;padding:44px 68px}
+  .tx-body p{font-size:46px;line-height:1.4}
+  .tx-body p + p{margin-top:20px}
+  .tx-body p.center{text-align:center}
+  .tx-body p.note{font-size:36px;font-style:italic;line-height:1.38;opacity:.95;margin-top:26px}
+  .tx-body p.quote{font-family:var(--serif);font-style:italic;font-size:44px;color:var(--gold);text-align:center;margin-top:12px}
+  .tx-body p.prayer{font-size:50px;line-height:1.45}
+  .tx-body p.aviso{font-size:42px;line-height:1.38}
+  .tx-body p.aviso + p.aviso{margin-top:26px}
+  .tx-body .amen{display:block;text-align:right;font-weight:700;color:var(--gold);margin-top:14px}
+  .sor{display:flex;gap:28px;justify-content:center;margin:26px 0 8px}
+  .sor div{flex:1;max-width:400px;text-align:center;padding:16px 10px 18px;border-radius:18px;
+    background:rgba(255,255,255,.08);border:2px solid rgba(255,211,107,.6)}
+  .sor b{display:block;font:700 84px/1 var(--title-font);color:var(--gold)}
+  .sor span{display:block;font:700 36px var(--title-font);letter-spacing:3px;margin-top:6px}
+
+  /* Botón de temporizador dentro de una diapositiva */
+  .timer-chip{position:absolute;z-index:5;display:flex;align-items:center;gap:14px;padding:16px 30px;border-radius:60px;border:2px solid rgba(255,255,255,.7);
+    background:rgba(11,42,85,.88);color:#fff;font:700 32px var(--title-font);letter-spacing:1px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .timer-chip:hover{background:#174f93}
+  .timer-chips{position:absolute;z-index:5;display:flex;flex-direction:column;align-items:flex-end;gap:16px}
+  .timer-chips .timer-chip{position:static}
+
+  /* ===== Interfaz (fuera del escenario) ===== */
+  .nav{position:fixed;top:50%;width:72px;height:72px;margin-top:-36px;border-radius:50%;border:2px solid rgba(255,255,255,.55);
+    background:rgba(8,30,64,.45);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:20;
+    opacity:.55;transition:opacity .25s, background .25s, transform .2s;backdrop-filter:blur(4px)}
+  .nav:hover{opacity:1;background:rgba(20,80,150,.85);transform:scale(1.08)}
+  .nav svg{width:34px;height:34px}
+  #prev{left:18px} #next{right:18px}
+  .nav.hidden{opacity:0;pointer-events:none}
+
+  #progress{position:fixed;left:0;top:0;height:5px;background:linear-gradient(90deg,var(--gold2),var(--gold));z-index:20;transition:width .6s ease;box-shadow:0 0 10px rgba(255,210,100,.7)}
+
+  #bar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:10px;
+    padding:10px 16px;border-radius:40px;background:rgba(6,22,48,.82);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(8px);
+    box-shadow:0 10px 30px rgba(0,0,0,.4);transition:opacity .4s, transform .4s;font-size:14px;white-space:nowrap}
+  body.idle #bar{opacity:0;transform:translate(-50%,20px);pointer-events:none}
+  #musicBtn{position:fixed;right:16px;bottom:16px;z-index:31;width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,255,255,.55);
+    background:rgba(8,30,64,.55);color:#fff;font:700 26px/1 var(--body-font);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;opacity:.6;transition:opacity .25s, background .25s;backdrop-filter:blur(4px)}
+  #musicBtn:hover, body:not(.idle) #musicBtn{opacity:1;background:rgba(20,80,150,.85)}
+  body.shot #musicBtn{display:none}
+  #bar button{background:none;border:none;color:#fff;cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  #bar button:hover{background:rgba(255,255,255,.15)}
+  #bar button.on{background:rgba(255,211,107,.25);color:var(--gold)}
+  #bar svg{width:20px;height:20px}
+  #bar .sep{width:1px;height:24px;background:rgba(255,255,255,.2);margin:0 4px}
+  #track{max-width:320px;overflow:hidden;text-overflow:ellipsis;opacity:.85}
+  #vol{width:130px;accent-color:var(--gold)}
+  #volpct{width:38px;text-align:right;opacity:.85;font-variant-numeric:tabular-nums}
+  #pgnum{position:absolute;left:16px;top:10px;z-index:31;padding:7px 15px;border-radius:30px;background:rgba(6,22,48,.6);border:1px solid rgba(255,255,255,.35);
+    color:#fff;font:700 24px/1 var(--title-font);letter-spacing:2px;font-variant-numeric:tabular-nums;pointer-events:none}
+  .pill{border:1px solid rgba(255,255,255,.3)!important;border-radius:20px!important;width:auto!important;padding:0 12px;font-size:13px}
+
+  #toast{position:fixed;left:50%;top:26px;transform:translate(-50%,-250%);z-index:40;padding:14px 28px;border-radius:30px;background:rgba(6,22,48,.9);
+    border:1px solid rgba(255,255,255,.25);font-size:18px;transition:transform .4s}
+  #toast.show{transform:translate(-50%,0)}
+
+  /* Temporizador */
+  #timer{position:fixed;right:26px;top:26px;z-index:35;width:150px;height:150px;display:none;cursor:pointer}
+  #timer.show{display:block}
+  #timer svg{width:100%;height:100%;transform:rotate(-90deg)}
+  #timer .t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 38px var(--title-font);
+    text-shadow:0 2px 6px rgba(0,0,0,.6);font-variant-numeric:tabular-nums}
+  #timer .x{position:absolute;right:-4px;top:-4px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.4);
+    color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center}
+  #banner{position:fixed;inset:0;z-index:36;display:none;align-items:center;justify-content:center;pointer-events:none}
+  #banner.show{display:flex}
+  #banner div{font:700 120px var(--title-font);color:#fff;-webkit-text-stroke:8px #000;paint-order:stroke fill;text-shadow:6px 6px 0 rgba(0,0,0,.5);
+    padding:30px 80px;border-radius:30px;background:rgba(11,42,85,.55);animation:pop .6s ease}
+  #banner.warn div{background:rgba(180,120,0,.55)}
+  @keyframes pop{from{transform:scale(.7);opacity:0}}
+
+  /* Índice */
+  #grid{position:fixed;inset:0;z-index:50;background:rgba(3,12,28,.94);display:none;overflow:auto;padding:50px 60px}
+  #grid.show{display:block}
+  #grid h3{font:700 28px var(--title-font);margin-bottom:24px;letter-spacing:2px}
+  #grid .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px}
+  #grid .it{cursor:pointer;border-radius:10px;overflow:hidden;border:3px solid transparent;background:#0b2a55;position:relative;aspect-ratio:16/9}
+  #grid .it.cur{border-color:var(--gold)}
+  #grid .it img{width:100%;height:100%;object-fit:cover;display:block}
+  #grid .it span{position:absolute;left:0;right:0;bottom:0;padding:6px 10px;background:linear-gradient(transparent,rgba(0,0,0,.85));font-size:14px}
+  #grid .it .lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font:700 20px var(--title-font);
+    background:url("img/bg.jpg") center/cover;color:var(--navy)}
+
+  body.shot #bar, body.shot .nav, body.shot #progress, body.shot .timer-chip, body.shot #pgnum{display:none}
+  body.shot .slide{transition:none!important}
+  body.shot .slide *{animation-delay:0s!important;animation-duration:.01s!important;transition:none!important}
+
+  /* Pantalla de inicio */
+  #start{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#020a19}
+  #start::before{content:"";position:absolute;inset:-40px;background:url("img/s01.jpg") center/cover;filter:blur(14px) brightness(.55)}
+  #start::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(15,55,105,.35),rgba(2,10,25,.9))}
+  #start > *{position:relative;z-index:1}
+  #start .card{text-align:center;max-width:1200px;padding:50px 60px}
+  #start .cross{font-size:54px;color:var(--gold);text-shadow:0 0 25px rgba(255,210,100,.6);margin-bottom:8px}
+  #start h1{font:700 64px var(--title-font);letter-spacing:1px;text-shadow:0 4px 20px rgba(0,0,0,.6)}
+  #start h2{font:500 28px var(--body-font);margin-top:10px;opacity:.9}
+  #start .pv{margin-top:34px;font-size:22px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-weight:700}
+  #start .btns{margin-top:40px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+  #start button{font:700 22px var(--body-font);padding:18px 38px;border-radius:50px;cursor:pointer;border:2px solid rgba(255,255,255,.6);color:#fff;background:transparent}
+  #start button.primary{background:linear-gradient(180deg,#ffd877,#f0a92e);color:#2b1a00;border-color:#ffe39a;box-shadow:0 10px 30px rgba(240,170,50,.45)}
+  #start button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  #start .help{margin-top:34px;font-size:16px;opacity:.75;line-height:1.7}
+  #start .help kbd{display:inline-block;padding:1px 8px;border-radius:5px;border:1px solid rgba(255,255,255,.5);font-family:inherit;font-size:14px;margin:0 2px}
+  #start .credits{position:absolute!important;bottom:14px;left:20px;right:20px;text-align:center;font-size:11px;opacity:.5;line-height:1.5}
+  @media (max-height:620px), (max-width:760px){
+    #start{flex-direction:column;justify-content:safe center;overflow-y:auto}
+    #start .card{padding:14px 18px}
+    #start .cross{font-size:28px;margin-bottom:0}
+    #start h1{font-size:min(36px, 9vw)}
+    #start h2{font-size:17px;margin-top:4px}
+    #start .pv{margin-top:10px;font-size:13px;letter-spacing:1px}
+    #start .btns{margin-top:14px;gap:10px}
+    #start button{font-size:16px;padding:11px 22px}
+    #start .help{display:none}
+    #start .credits{position:static!important;margin:6px 18px 12px;font-size:9px}
+  }
+  @media (max-width:1100px), (max-height:500px){
+    #bar{left:12px;right:80px;transform:none;max-width:none;flex-wrap:wrap;justify-content:center;gap:6px 8px;padding:8px 10px;border-radius:24px;bottom:12px}
+    body.idle #bar{transform:translateY(20px)}
+    #bar #track, #bar #volpct, #bar #bDuck, #bar .sep{display:none}
+    #bar #vol{width:90px}
+    #musicBtn{right:12px;bottom:12px;width:50px;height:50px}
+    #timer{width:86px;height:86px;right:12px;top:12px}
+    #timer .t{font-size:22px}
+    #timer .x{width:24px;height:24px}
+  }
+  body.novol #vol, body.novol #volpct, body.novol #bDuck{display:none}
+</style>
+
+<meta name="robots" content="noindex, nofollow, noarchive">
+<style>
+  body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  img{-webkit-user-drag:none}
+  @media print{html,body{display:none!important}}
+</style>
+<script>
+(() => {
+  const bloquear = e => e.preventDefault();
+  ["contextmenu", "copy", "cut", "dragstart", "selectstart"].forEach(t => document.addEventListener(t, bloquear));
+  document.addEventListener("keydown", e => {
+    if ((e.metaKey || e.ctrlKey) && ["s", "p", "c", "x", "a", "u"].includes(e.key.toLowerCase())) {
+      e.preventDefault(); e.stopImmediatePropagation();
+    }
+  }, true);
+})();
+</script>
+</head>
+<body>
+
+<div id="viewport"><div id="stage">
+  <div id="pgnum">1 / 1</div>
+
+  <section class="slide" data-title="Portada"><img class="full" src="img/s01.jpg" alt=""></section>
+  <section class="slide" data-title="1. Oración inicial"><img class="full" src="img/s02.jpg" alt=""></section>
+  <section class="slide" data-title="Jesús, me fío de Ti"><img class="full" src="img/s03.jpg" alt=""></section>
+  <section class="slide" data-title="Te doy gracias · Te pido perdón"><img class="full" src="img/s04.jpg" alt=""></section>
+  <section class="slide" data-title="Te pido gracias · Como María"><img class="full" src="img/s05.jpg" alt=""></section>
+  <section class="slide" data-title="Todo por Jesús, como María"><img class="full" src="img/s06.jpg" alt=""></section>
+
+  <section class="slide designed" id="s-prop-semana" data-title="2. Propósito de esta semana">
+    <div class="wrap">
+      <div class="titlebar">2. Propósito de esta semana</div>
+      <div class="pic"><img src="img/proposito.jpg" alt="Propósito de esta semana"></div>
+    </div>
+  </section>
+
+  <section class="slide designed" data-title="3. Reflexión" data-duck="1">
+    <div class="pv-head"><div class="titlebar small">3. Reflexión</div></div>
+    <div class="tx-body"><div class="panel">
+      <p class="center">Tomaremos <span class="hl">2 minutos</span> para pensar cómo hemos vivido positivamente el propósito de esta semana.</p>
+      <p class="center" style="margin-top:22px">Recuerda pensarlo en clave <span class="hl">SOR</span>:</p>
+      <div class="sor"><div><b>S</b><span>SITUACIÓN</span></div><div><b>O</b><span>OBRA</span></div><div><b>R</b><span>RESULTADO</span></div></div>
+      <p class="note"><b>Nota:</b> Hermanos, si durante la semana no pudiste vivir el propósito con intención, puedes mantenerte en silencio y cederle la oportunidad a otro. Esta semana tendrás otro propósito, el cual podrás recordarlo y vivirlo con intención según te guíe el Espíritu Santo.</p>
+    </div></div>
+  </section>
+
+  <section class="slide designed" data-title="4. Compartir" data-duck="1">
+    <div class="pv-head"><div class="titlebar small">4. Compartir</div></div>
+    <div class="tx-body"><div class="panel">
+      <p class="center">Comparte tu experiencia positiva con humildad, de manera breve <span class="hl">(máximo 3 min)</span>, usando el método <span class="hl">SOR</span>.</p>
+      <p class="center" style="margin-top:14px">Recuerda pensarlo en clave <span class="hl">SOR</span>:</p>
+      <div class="sor" style="margin-top:18px"><div><b>S</b><span>SITUACIÓN</span></div><div><b>O</b><span>OBRA</span></div><div><b>R</b><span>RESULTADO</span></div></div>
+      <p class="center" style="margin-top:26px">Puedes comenzar diciendo:</p>
+      <p class="quote">“Doy gracias a Dios y a María Santísima por… SOR”</p>
+      <p class="quote">“Gracias Señor por haberme dado la oportunidad de haberte servido… SOR”</p>
+    </div></div>
+  </section>
+<!--PROP_TEXTO-->
+  <section class="slide designed" id="s-prop-texto" data-title="2. Propósito de esta semana" data-timers="120|Reflexión;180|Compartir" data-chip="left:24px;top:72px;align-items:flex-start" data-duck="1">
+    <div class="right">
+      <div class="titlebar">2. Propósito de esta semana</div>
+      <div class="kicker">Domingo XXX</div>
+      <div class="sub">“Un solo mandamiento” · 25 de octubre de 2026</div>
+      <div class="panel">
+        <ul>
+          <li>Voy a amar siempre y sólo a amar.</li>
+          <li>Pero voy a amar haciendo lo que debo hacer en cada momento.</li>
+          <li>Encontraré tiempo para rezar y para hacer obras buenas.</li>
+          <li>Ambas por amor.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+<!--END_PROP_TEXTO-->
+<!--PALABRA_VIDA-->
+  <section class="slide designed" id="s-pv-intro" data-title="5. Palabra de Vida" data-duck="1">
+    <div class="center">
+      <div class="titlebar">5. Palabra de Vida</div>
+      <h2>Todos los Santos: Dichoso el que ama</h2>
+      <div class="date">1 de noviembre de 2026</div>
+      <div class="panel quote">
+        <p>“Dichosos los pobres de espíritu, porque de ellos es el reino de los cielos….”</p>
+        <cite>(Mt 5, 1-12a)</cite>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide designed" data-title="Palabra de Vida (1/3)" data-duck="1">
+    <div class="pv-head"><div class="titlebar small">5. Palabra de Vida</div></div>
+    <div class="pv-cap">TODOS LOS SANTOS · DICHOSO EL QUE AMA</div>
+    <div class="pv-body"><div class="panel">
+      <p>La solemnidad de Todos los Santos tiene como referencia evangélica el texto de las bienaventuranzas. La Iglesia ha querido, de este modo, recordar a los católicos no sólo que todos están llamados a la santidad –a la que han llegado ya esa legión innumerable de los santos anónimos, cuya fiesta se celebra en este día-, sino también que el camino para esa santidad pasa necesariamente por el amor. De hecho, amor y santidad son sinónimos. El que ama es santo y el santo ama.</p>
+    </div></div>
+  </section>
+
+  <section class="slide designed" data-title="Palabra de Vida (2/3)" data-duck="1">
+    <div class="pv-head"><div class="titlebar small">5. Palabra de Vida</div></div>
+    <div class="pv-cap">TODOS LOS SANTOS · DICHOSO EL QUE AMA</div>
+    <div class="pv-body"><div class="panel">
+      <p>Pero el que ama es pobre, porque comparte con el que tiene menos. Llora con los que lloran, sufre con los que sufren, alimenta al hambriento y su corazón rebosa misericordia, lo mismo que sus manos. Es limpio de corazón, porque no se acerca al prójimo para utilizarle, para manipularle en función de sus intereses egoístas. Se esfuerza por perdonar, es decir, por ser no sólo pacífico sino pacificador. E incluso, si le persiguen por amar, por ser cristiano, se siente feliz porque sabe que está compartiendo la suerte de Cristo.</p>
+    </div></div>
+  </section>
+
+  <section class="slide designed" data-title="Palabra de Vida (3/3)" data-duck="1">
+    <div class="pv-head"><div class="titlebar small">5. Palabra de Vida</div></div>
+    <div class="pv-cap">TODOS LOS SANTOS · DICHOSO EL QUE AMA</div>
+    <div class="pv-body"><div class="panel">
+      <p>Pero si amor y santidad son sinónimos, también lo es otra palabra: felicidad. Porque el que ama es feliz y en realidad sólo el santo es totalmente feliz. Para el cristiano la felicidad no viene de la ausencia de problemas, de la carencia de afecto para no ser herido, voluntaria o involuntariamente, por los seres amados. La felicidad está en la plenitud del amor, siempre que sea verdadero. El que mas ama, es el más feliz, aunque eso le suponga complicarse la vida, como se la complicó, por nosotros, Cristo.</p>
+    </div></div>
+  </section>
+<!--END_PALABRA_VIDA-->
+  <section class="slide designed" id="s-proposito" data-title="6. Propósito" data-duck="1">
+    <div class="rays"></div>
+    <div class="center">
+      <div class="titlebar">6. Propósito</div>
+      <div class="kicker">Para vivir esta semana</div>
+      <div class="panel">
+<!--PROPOSITO-->        <p>Cumplir las propias obligaciones como un primer paso hacia la santidad. Y luego ir más allá, no contentándose con los mínimos sino aspirando a dar de sí todo lo posible.</p><!--END_PROPOSITO-->
+      </div>
+      <div class="motto">Amar es una bendición<br>para el que ama.</div>
+    </div>
+  </section>
+
+  <section class="slide designed" id="s-agradecer" data-title="7. Momento de Agradecimiento" data-timer="120" data-chip="right:40px;top:52px">
+    <div class="pv-head"><div class="titlebar small">7. Momento de Agradecimiento</div></div>
+    <div class="body"><div class="panel">
+      <h3>AGRADECER, AGRADECER, AGRADECER.</h3>
+      <p class="lead">Aquí no pedimos.</p>
+      <p>Demos gracias a Dios y a María Santísima: por la Iglesia, por Papa León XIV, por los Obispos, Sacerdotes, por Padre Santiago y por los Franciscanos de María.</p>
+    </div></div>
+    <p class="silencio">Entre todos debemos tomarnos <span class="hl">máximo 2 minutos</span> <span class="sil">en silencio</span> para este momento.</p>
+  </section>
+  <section class="slide" data-title="8. Oración de despedida"><img class="full" src="img/s15.jpg" alt=""></section>
+  <section class="slide designed" data-title="9. Oración por las Vocaciones (1/2)" data-duck="1">
+    <div class="pv-head"><div class="titlebar small">9. Oración por las Vocaciones</div></div>
+    <div class="tx-body"><div class="panel">
+      <p class="prayer">Padre. Tu Hijo nos pidió que acudiésemos a Ti suplicándote que enviaras obreros a tus mies, que es la Iglesia. Necesitamos vocaciones consagradas. Hoy, más aún que en la época de Jesús, la mies es mucha y los obreros pocos. Por eso te pedimos que nos des el don de las vocaciones.</p>
+      <p class="prayer">Te suplicamos que llames a jóvenes que quieran ser santos a consagrarte a Ti, y por amor a Ti, a servir a la Iglesia, a vivir el carisma del agradecimiento, a amarte y hacerte amar.</p>
+    </div></div>
+  </section>
+
+  <section class="slide designed" data-title="9. Oración por las Vocaciones (2/2)" data-duck="1">
+    <div class="pv-head"><div class="titlebar small">9. Oración por las Vocaciones</div></div>
+    <div class="tx-body"><div class="panel">
+      <p class="prayer">Sostén en la llamada a quienes has elegido, para que no flaqueen y sigan adelante cada vez con mayor entrega. Atiende nuestras súplicas, Señor, y manda a los Franciscanos de María vocaciones para que podamos servirte como Tú nos pides. Te lo pedimos por intercesión de María, la Inmaculada, la Siempre Virgen, la Madre de tu Hijo. <span class="amen">Amén.</span></p>
+    </div></div>
+  </section>
+
+  <section class="slide designed" data-title="10. Avisos (1/2)" data-duck="1">
+    <div class="pv-head"><div class="titlebar small">10. Avisos</div></div>
+    <div class="tx-body"><div class="panel">
+      <p class="aviso" style="font-size:48px">El <span class="hl">compartir</span> es la parte más importante de la Escuela de Agradecimiento: todos los miembros estamos llamados a participar cada semana como muestra de nuestro interés y deseo de vivir la Espiritualidad del Agradecimiento. Esto lo logramos recordando y viviendo el propósito con intención, todos los días.</p>    </div></div>
+  </section>
+
+  <section class="slide designed" data-title="10. Avisos (2/2)" data-duck="1">
+    <div class="pv-head"><div class="titlebar small">10. Avisos</div></div>
+    <div class="tx-body"><div class="panel">
+      <p class="aviso"><span class="hl">Magnificat.tv:</span> es nuestra televisora online. Recuerda ingresar a la sección de “Formación FM” con su usuario y su clave, al menos una vez al mes, para evitar que se desactive su cuenta.</p>
+      <p class="aviso"><span class="hl">Canal YouTube de los FM:</span> recuerda suscribirte al canal “Franciscanos de María”, donde encontrarás: Misa, Homilía diaria, Actualidad Comentada, Rosario del agradecimiento, Coronilla de la Divina Misericordia, entre otros temas.</p>
+      <p class="aviso"><span class="hl">Hay necesidad de nuevos Catequistas.</span> Quien esté interesado, al finalizar la Escuela puede quedarse unos minutos más para recibir información al respecto.</p>
+    </div></div>
+  </section>
+  <section class="slide" data-title="Oraciones por el Papa León XIV"><img class="full" src="img/s19.jpg" alt=""></section>
+
+</div></div>
+
+<div id="progress"></div>
+<div class="nav" id="prev" title="Anterior (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></div>
+<button id="musicBtn" title="Controles de música">♪</button>
+<div class="nav" id="next" title="Siguiente (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></div>
+
+<div id="bar">
+  <button id="bPrevT" title="Pieza anterior"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+  <button id="bPlay" title="Reproducir / pausar música (P)"><svg viewBox="0 0 24 24" fill="currentColor" id="icoPlay"><path d="M7 5v14l12-7z"/></svg></button>
+  <button id="bNextT" title="Siguiente pieza (N)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+  <span id="track">Música en pausa</span>
+  <button id="bLoop" class="pill on" title="Cambiar bucle: toda la lista o solo esta pieza (R)">Bucle: toda la lista</button>
+  <span class="sep"></span>
+  <button id="bMute" title="Silenciar música (M)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path id="waves" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></button>
+  <input id="vol" type="range" min="0" max="100" value="30" title="Volumen solo de la música (↑ ↓)">
+  <span id="volpct">30%</span>
+  <button id="bDuck" class="pill on" title="Baja la música automáticamente en las diapositivas de lectura">Lectura suave</button>
+  <span class="sep"></span>
+  <button id="bTimer" title="Temporizador de 3 minutos (T)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg></button>
+  <button id="bGrid" title="Índice de diapositivas (G)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z"/></svg></button>
+  <button id="bFull" title="Pantalla completa (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+</div>
+
+<div id="toast"></div>
+<div id="timer" title="Clic: pausar / reanudar"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="rgba(6,22,48,.85)" stroke="rgba(255,255,255,.2)" stroke-width="8"/><circle id="ring" cx="50" cy="50" r="44" fill="none" stroke="#ffd36b" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/></svg><div class="t" id="tTxt">3:00</div><div class="x" id="tClose" title="Cerrar temporizador">✕</div></div>
+<div id="banner"><div id="bannerTxt"></div></div>
+<div id="grid"><h3>ÍNDICE · toca una diapositiva para ir</h3><div class="items" id="gridItems"></div></div>
+
+<div id="start">
+  <div class="card">
+    <div class="cross">✠</div>
+    <h1>Franciscanos de María</h1>
+    <h2>Escuela del Agradecimiento</h2>
+    <div class="pv"><!--INICIO_PV-->Palabra de Vida · Todos los Santos · “Dichoso el que ama”<!--END_INICIO_PV--></div>
+    <div class="btns">
+      <button class="primary" id="goMusic">▶ Comenzar con música</button>
+      <button id="goSilent">Comenzar sin música</button>
+    </div>
+    <div class="help">
+      <kbd>→</kbd> <kbd>Espacio</kbd> avanzar · <kbd>←</kbd> regresar · <kbd>↑</kbd> <kbd>↓</kbd> volumen de la música · <kbd>M</kbd> silenciar música<br>
+      <kbd>F</kbd> pantalla completa · <kbd>G</kbd> índice · <kbd>T</kbd> temporizador · <kbd>N</kbd> siguiente pieza musical · <kbd>R</kbd> bucle (lista o una pieza)
+    </div>
+  </div>
+  <div class="credits"><!--CREDITS-->Música (Wikimedia Commons): Ave María (Schubert) · violín y piano — Yehudi Menuhin y Adolph Baller, dominio público · Ave María (Bach-Gounod) · violonchelo — John Michel, dominio público · Ave María (Bach-Gounod y Schubert) · banda de concierto — U.S. Air Force Heritage of America Band, dominio público · Texto: franciscanosdemaria.org<!--END_CREDITS--></div>
+</div>
+
+<audio id="audio" preload="auto"></audio>
+
+<script>
+(() => {
+  const TRACKS = /*TRACKS*/[{"src": "audio/01.mp3", "name": "Ave María (Schubert) · violín y piano"}, {"src": "audio/02.mp3", "name": "Ave María (Bach-Gounod) · violonchelo"}, {"src": "audio/03.mp3", "name": "Ave María (Bach-Gounod y Schubert) · banda de concierto"}]/*END_TRACKS*/;
+  const DUCK_FACTOR = 0.35;
+
+  const $ = id => document.getElementById(id);
+  const stage = $("stage"), slides = [...document.querySelectorAll(".slide")];
+  const audio = $("audio");
+  let cur = 0, trackIdx = 0, wantMusic = false, muted = false, duckOn = true;
+  let userVol = (+localStorage.getItem("fm_vol") || 30) / 100;
+
+  /* Zoom propio (pellizco). Safari se cierra si usamos su zoom nativo encima de la escala CSS. */
+  let userZoom = 1, panX = 0, panY = 0;
+  const ZOOM_MIN = 1, ZOOM_MAX = 2.6;
+  function baseScale(){ return Math.min(innerWidth / 1920, innerHeight / 1080); }
+  function clampPan(){
+    if (userZoom <= 1.001) { userZoom = 1; panX = panY = 0; return; }
+    const w = 1920 * baseScale() * userZoom, h = 1080 * baseScale() * userZoom;
+    const maxX = Math.max(0, (w - innerWidth) / 2 + 40);
+    const maxY = Math.max(0, (h - innerHeight) / 2 + 40);
+    panX = Math.max(-maxX, Math.min(maxX, panX));
+    panY = Math.max(-maxY, Math.min(maxY, panY));
+  }
+  function fit(){
+    clampPan();
+    stage.style.transform = `translate(${panX}px, ${panY}px) scale(${baseScale() * userZoom})`;
+  }
+  addEventListener("resize", fit); fit();
+  ["gesturestart","gesturechange","gestureend"].forEach(t =>
+    document.addEventListener(t, e => e.preventDefault(), {passive:false}));
+
+  const viewportEl = document.getElementById("viewport");
+  const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  const mid = (a, b) => ({ x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 });
+  const uiTouch = el => el && el.closest && el.closest("#bar, #musicBtn, #prev, #next, #timer, #start, #grid, .timer-chip, button, input, a");
+  let pinch = null, drag = null, lastTap = null;
+
+  viewportEl.addEventListener("touchstart", e => {
+    if (uiTouch(e.target)) return;
+    if (e.touches.length >= 2) {
+      e.preventDefault();
+      const a = e.touches[0], b = e.touches[1];
+      pinch = { dist: dist(a, b), zoom: userZoom, panX, panY, mid: mid(a, b) };
+      drag = null;
+    } else if (e.touches.length === 1 && userZoom > 1.01) {
+      drag = { x: e.touches[0].clientX, y: e.touches[0].clientY, panX, panY };
+    }
+  }, { passive: false });
+
+  viewportEl.addEventListener("touchmove", e => {
+    if (pinch && e.touches.length >= 2) {
+      e.preventDefault();
+      const a = e.touches[0], b = e.touches[1], m = mid(a, b);
+      userZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, pinch.zoom * (dist(a, b) / pinch.dist)));
+      panX = pinch.panX + (m.x - pinch.mid.x);
+      panY = pinch.panY + (m.y - pinch.mid.y);
+      fit();
+    } else if (drag && e.touches.length === 1 && userZoom > 1.01) {
+      e.preventDefault();
+      panX = drag.panX + (e.touches[0].clientX - drag.x);
+      panY = drag.panY + (e.touches[0].clientY - drag.y);
+      fit();
+    }
+  }, { passive: false });
+
+  viewportEl.addEventListener("touchend", e => {
+    if (e.touches.length < 2) pinch = null;
+    if (e.touches.length === 0) {
+      drag = null;
+      if (uiTouch(e.target) || e.changedTouches.length !== 1) return;
+      const t = e.changedTouches[0], now = Date.now();
+      if (lastTap && now - lastTap.t < 300 && Math.hypot(t.clientX - lastTap.x, t.clientY - lastTap.y) < 44) {
+        e.preventDefault();
+        if (userZoom > 1.05) { userZoom = 1; panX = panY = 0; }
+        else {
+          userZoom = 2;
+          panX = (innerWidth / 2 - t.clientX);
+          panY = (innerHeight / 2 - t.clientY);
+        }
+        fit();
+        lastTap = null;
+      } else lastTap = { t: now, x: t.clientX, y: t.clientY };
+    }
+  }, { passive: false });
+
+  viewportEl.addEventListener("wheel", e => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    userZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, userZoom * (e.deltaY > 0 ? 0.9 : 1.1)));
+    fit();
+  }, { passive: false });
+
+  const FIT_W = "#s-pv-intro h2, .pv-cap, #s-prop-texto .kicker, #s-prop-texto .sub";
+  const FIT_H = [[".pv-body", ".panel p"], ["#s-pv-intro .center", ".quote p"], ["#s-prop-texto .right", "li"], ["#s-proposito .center", ".panel p"]];
+  function contentHeight(box){
+    const kids = [...box.children];
+    if (!kids.length) return 0;
+    return Math.max(...kids.map(k => k.offsetTop + k.offsetHeight)) - Math.min(...kids.map(k => k.offsetTop));
+  }
+  function autoFit(){
+    document.querySelectorAll(FIT_W).forEach(el => {
+      el.style.fontSize = "";
+      const cs = getComputedStyle(el.parentElement);
+      const room = el.parentElement.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      let fs = parseFloat(getComputedStyle(el).fontSize);
+      el.style.whiteSpace = "nowrap";
+      while (el.scrollWidth > room && fs > 18) { fs -= 1; el.style.fontSize = fs + "px"; }
+      el.style.whiteSpace = "";
+    });
+    FIT_H.forEach(([boxSel, txtSel]) => document.querySelectorAll(boxSel).forEach(box => {
+      const txt = [...box.querySelectorAll(txtSel)];
+      txt.forEach(t => t.style.fontSize = "");
+      if (!txt.length) return;
+      const cs = getComputedStyle(box);
+      const room = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      let fs = parseFloat(getComputedStyle(txt[0]).fontSize);
+      while (contentHeight(box) > room && fs > 24) { fs -= 1; txt.forEach(t => t.style.fontSize = fs + "px"); }
+    }));
+    window.__fitted = true;
+  }
+  autoFit();
+  document.fonts.ready.then(autoFit);
+
+  function timerChip(secs, label){
+    const b = document.createElement("div");
+    b.className = "timer-chip";
+    b.innerHTML = `⏱ ${label || "Iniciar"} ${Math.floor(secs/60)}:${String(secs%60).padStart(2,"0")}`;
+    b.addEventListener("click", e => { e.stopPropagation(); startTimer(secs); if (label) toast(`${label}: ${fmt(secs)} minutos`); });
+    return b;
+  }
+  slides.forEach(sl => {
+    if (sl.dataset.timers) {
+      const box = document.createElement("div");
+      box.className = "timer-chips"; box.style.cssText = sl.dataset.chip || "right:40px;top:40px";
+      sl.dataset.timers.split(";").forEach(t => { const [secs, label] = t.split("|"); box.appendChild(timerChip(+secs, label)); });
+      sl.appendChild(box);
+      return;
+    }
+    if (!sl.dataset.timer) return;
+    const b = timerChip(+sl.dataset.timer);
+    b.style.cssText = sl.dataset.chip || "right:150px;top:40px";
+    sl.appendChild(b);
+  });
+
+  function go(n){
+    n = Math.max(0, Math.min(slides.length-1, n));
+    slides[cur].classList.remove("active");
+    cur = n;
+    slides[cur].classList.add("active");
+    $("pgnum").textContent = `${cur+1} / ${slides.length}`;
+    $("progress").style.width = `${(cur/(slides.length-1))*100}%`;
+    $("prev").title = cur===0 ? "Ir a la última (←)" : "Anterior (←)";
+    $("next").title = cur===slides.length-1 ? "Volver al inicio (→)" : "Siguiente (→)";
+    if (tLeft <= 0) hideTimer();
+    history.replaceState(null, "", "#" + (cur+1));
+    applyVolume();
+    markGrid();
+  }
+  const next = () => go(cur === slides.length-1 ? 0 : cur+1), prev = () => go(cur === 0 ? slides.length-1 : cur-1);
+  $("next").onclick = next; $("prev").onclick = prev;
+
+  /* ---------- Música ---------- */
+  function effectiveVol(){
+    if (muted) return 0;
+    const duck = duckOn && slides[cur].dataset.duck ? DUCK_FACTOR : 1;
+    return userVol * duck;
+  }
+  let fadeTimer = null;
+  // En iPhone/iPad el volumen solo se cambia con los botones físicos: audio.volume no se puede modificar.
+  const volumeWorks = (() => { const a = new Audio(); a.volume = 0.5; return Math.abs(a.volume - 0.5) < 0.01; })();
+  if (!volumeWorks) document.body.classList.add("novol");
+  function applyVolume(instant){
+    const target = effectiveVol();
+    clearInterval(fadeTimer);
+    if (!volumeWorks) { audio.muted = muted; return; }
+    if (instant) { audio.volume = target; return; }
+    fadeTimer = setInterval(() => {
+      const d = target - audio.volume;
+      if (Math.abs(d) < 0.01) { audio.volume = target; clearInterval(fadeTimer); return; }
+      audio.volume = Math.max(0, Math.min(1, audio.volume + Math.sign(d) * Math.min(Math.abs(d), 0.02)));
+    }, 40);
+  }
+  function loadTrack(i){
+    trackIdx = (i + TRACKS.length) % TRACKS.length;
+    audio.src = TRACKS[trackIdx].src;
+    updateTrackLabel();
+  }
+  function updateTrackLabel(){
+    $("track").textContent = wantMusic ? "♪ " + TRACKS[trackIdx].name : "Música en pausa";
+    $("icoPlay").innerHTML = wantMusic ? '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>' : '<path d="M7 5v14l12-7z"/>';
+  }
+  function play(){
+    wantMusic = true;
+    if (!audio.src) loadTrack(trackIdx);
+    audio.volume = 0;
+    audio.play().then(() => applyVolume()).catch(() => toast("Toca la pantalla para activar la música"));
+    updateTrackLabel();
+  }
+  function pause(){
+    wantMusic = false;
+    clearInterval(fadeTimer);
+    if (!volumeWorks) { audio.pause(); updateTrackLabel(); return; }
+    const step = setInterval(() => {
+      audio.volume = Math.max(0, audio.volume - 0.03);
+      if (audio.volume <= 0) { clearInterval(step); if (!wantMusic) audio.pause(); }
+    }, 40);
+    updateTrackLabel();
+  }
+  audio.addEventListener("ended", () => { loadTrack(trackIdx+1); if (wantMusic) play(); });
+  let loopOne = localStorage.getItem("fm_loop") === "one";
+  function applyLoop(){
+    audio.loop = loopOne;
+    $("bLoop").textContent = loopOne ? "Bucle: esta pieza" : "Bucle: toda la lista";
+  }
+  $("bLoop").onclick = () => {
+    loopOne = !loopOne; localStorage.setItem("fm_loop", loopOne ? "one" : "all"); applyLoop();
+    toast(loopOne ? "Se repetirá esta pieza sin parar" : "Se repetirá toda la lista sin parar");
+  };
+  applyLoop();
+  $("bPlay").onclick = () => wantMusic ? pause() : play();
+  $("bNextT").onclick = () => { loadTrack(trackIdx+1); if (wantMusic) play(); toast("♪ " + TRACKS[trackIdx].name); };
+  $("bPrevT").onclick = () => { loadTrack(trackIdx-1); if (wantMusic) play(); toast("♪ " + TRACKS[trackIdx].name); };
+
+  function setVol(v){
+    userVol = Math.max(0, Math.min(1, v));
+    $("vol").value = Math.round(userVol*100);
+    $("volpct").textContent = Math.round(userVol*100) + "%";
+    localStorage.setItem("fm_vol", Math.round(userVol*100) || 1);
+    if (muted && userVol > 0) setMute(false);
+    applyVolume(true);
+  }
+  function setMute(m){
+    muted = m;
+    $("bMute").classList.toggle("on", m);
+    $("waves").style.display = m ? "none" : "";
+    applyVolume();
+  }
+  $("vol").addEventListener("input", e => setVol(e.target.value/100));
+  $("bMute").onclick = () => { setMute(!muted); toast(muted ? "Música silenciada" : "Música activada"); };
+  $("bDuck").onclick = () => {
+    duckOn = !duckOn; $("bDuck").classList.toggle("on", duckOn); applyVolume();
+    toast(duckOn ? "Lectura suave: la música baja sola en las diapositivas de lectura" : "Lectura suave desactivada");
+  };
+  setVol(userVol);
+
+  /* ---------- Temporizador ---------- */
+  let tTotal = 0, tLeft = 0, tInt = null, tPaused = false, tHide = null;
+  function hideTimer(){ clearInterval(tInt); clearTimeout(tHide); $("timer").classList.remove("show"); }
+  function fmt(s){ return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; }
+  function drawTimer(){
+    $("tTxt").textContent = fmt(tLeft);
+    $("ring").style.strokeDashoffset = 276.46 * (1 - tLeft/tTotal);
+    $("ring").style.stroke = tLeft <= 60 ? "#ff8a5c" : "#ffd36b";
+  }
+  function startTimer(secs){
+    clearInterval(tInt); clearTimeout(tHide); tTotal = tLeft = secs; tPaused = false;
+    $("timer").classList.add("show"); drawTimer();
+    tInt = setInterval(() => {
+      if (tPaused) return;
+      tLeft--; drawTimer();
+      if (tLeft === 60 && tTotal > 60) { banner("Te queda un (1) minuto", true, 3500); chime(1); }
+      if (tLeft <= 0) { clearInterval(tInt); banner("Tiempo cumplido", false, 5000); chime(3); tHide = setTimeout(hideTimer, 5000); }
+    }, 1000);
+  }
+  $("timer").onclick = e => { if (e.target.id === "tClose") return; tPaused = !tPaused; toast(tPaused ? "Temporizador en pausa" : "Temporizador reanudado"); };
+  $("tClose").onclick = e => { e.stopPropagation(); hideTimer(); };
+  $("bTimer").onclick = () => startTimer(+(slides[cur].dataset.timer || (slides[cur].dataset.timers || "").split("|")[0] || 180));
+  let bannerT;
+  function banner(txt, warn, ms){
+    $("bannerTxt").textContent = txt; $("banner").className = "show" + (warn ? " warn" : "");
+    clearTimeout(bannerT); bannerT = setTimeout(() => $("banner").className = "", ms);
+  }
+  let actx;
+  function chime(times){
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      for (let k = 0; k < times; k++) {
+        const t0 = actx.currentTime + k * 1.1;
+        [[880,.22],[1320,.10],[1760,.06]].forEach(([f,g]) => {
+          const o = actx.createOscillator(), a = actx.createGain();
+          o.type = "sine"; o.frequency.value = f;
+          a.gain.setValueAtTime(0, t0); a.gain.linearRampToValueAtTime(g, t0 + .01);
+          a.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.2);
+          o.connect(a).connect(actx.destination); o.start(t0); o.stop(t0 + 2.3);
+        });
+      }
+    } catch(e) {}
+  }
+
+  /* ---------- Índice ---------- */
+  slides.forEach((sl, i) => {
+    const it = document.createElement("div"); it.className = "it";
+    const img = sl.querySelector("img.full");
+    it.innerHTML = img ? `<img src="${img.getAttribute("src")}" alt="">` : `<div class="lbl">${sl.dataset.title}</div>`;
+    it.insertAdjacentHTML("beforeend", `<span>${i+1}. ${sl.dataset.title}</span>`);
+    it.onclick = () => { go(i); toggleGrid(false); };
+    $("gridItems").appendChild(it);
+  });
+  function markGrid(){ [...$("gridItems").children].forEach((c,i) => c.classList.toggle("cur", i===cur)); }
+  function toggleGrid(show){ $("grid").classList.toggle("show", show ?? !$("grid").classList.contains("show")); }
+  $("bGrid").onclick = () => toggleGrid();
+
+  /* ---------- Pantalla completa, avisos, inactividad ---------- */
+  function toggleFull(){
+    if (!document.fullscreenElement) (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen).call(document.documentElement);
+    else (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  }
+  $("bFull").onclick = toggleFull;
+  let toastT;
+  function toast(msg){ $("toast").textContent = msg; $("toast").classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => $("toast").classList.remove("show"), 2200); }
+  let idleT;
+  function wake(){ document.body.classList.remove("idle"); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add("idle"), 5000); }
+  function hideBar(){ clearTimeout(idleT); document.body.classList.add("idle"); }
+  document.body.classList.add("idle");
+  $("musicBtn").onclick = e => { e.stopPropagation(); document.body.classList.contains("idle") ? wake() : hideBar(); };
+  ["pointermove", "pointerdown", "input", "focusin"].forEach(t => $("bar").addEventListener(t, () => { if (!document.body.classList.contains("idle")) wake(); }));
+  let cursorT;
+  addEventListener("mousemove", () => { document.body.classList.remove("nocursor"); clearTimeout(cursorT); cursorT = setTimeout(() => document.body.classList.add("nocursor"), 3500); });
+
+  addEventListener("keydown", e => {
+    if (e.target.tagName === "INPUT" && (e.key === "ArrowLeft" || e.key === "ArrowRight")) e.target.blur();
+    if ($("start").style.display !== "none" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); begin(true); return; }
+    switch (e.key) {
+      case "ArrowRight": case "PageDown": case " ": case "Enter": e.preventDefault(); next(); break;
+      case "ArrowLeft": case "PageUp": case "Backspace": e.preventDefault(); prev(); break;
+      case "Home": go(0); break;
+      case "End": go(slides.length-1); break;
+      case "ArrowUp": e.preventDefault(); setVol(userVol + .05); toast(`Volumen música: ${Math.round(userVol*100)}%`); break;
+      case "ArrowDown": e.preventDefault(); setVol(userVol - .05); toast(`Volumen música: ${Math.round(userVol*100)}%`); break;
+      case "m": case "M": $("bMute").click(); break;
+      case "p": case "P": $("bPlay").click(); break;
+      case "n": case "N": $("bNextT").click(); break;
+      case "r": case "R": $("bLoop").click(); break;
+      case "f": case "F": toggleFull(); break;
+      case "g": case "G": toggleGrid(); break;
+      case "t": case "T": $("bTimer").click(); break;
+      case "Escape": toggleGrid(false); break;
+    }
+  });
+
+  function begin(withMusic){
+    $("start").style.display = "none";
+    if (withMusic) play();
+  }
+  $("goMusic").onclick = () => begin(true);
+  $("goSilent").onclick = () => begin(false);
+
+  if (/[?&]shot\b/.test(location.search)) { $("start").style.display = "none"; document.body.classList.add("shot"); window.__go = go; }
+
+  const h = parseInt(location.hash.slice(1), 10);
+  go(Number.isFinite(h) ? h-1 : 0);
+})();
+</script>
+</body>
+</html>
