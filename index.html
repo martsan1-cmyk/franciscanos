@@ -315,13 +315,24 @@
   const viewportEl = $("viewport");
   const progress = $("progress");
   const toastEl = $("toast");
-  let cur = 0, zoom = 1;
-
+  let cur = 0, userZoom = 1, panX = 0, panY = 0;
+  const ZOOM_MIN = 1, ZOOM_MAX = 2.6;
+  function baseScale() { return Math.min(innerWidth / 1920, innerHeight / 1080); }
+  function clampPan() {
+    if (userZoom <= 1.001) { userZoom = 1; panX = panY = 0; return; }
+    const w = 1920 * baseScale() * userZoom, h = 1080 * baseScale() * userZoom;
+    const maxX = Math.max(0, (w - innerWidth) / 2 + 40);
+    const maxY = Math.max(0, (h - innerHeight) / 2 + 40);
+    panX = Math.max(-maxX, Math.min(maxX, panX));
+    panY = Math.max(-maxY, Math.min(maxY, panY));
+  }
   function fit() {
-    const s = Math.min(innerWidth / 1920, innerHeight / 1080) * zoom;
-    stage.style.transform = `scale(${s})`;
+    clampPan();
+    stage.style.transform = `translate(${panX}px, ${panY}px) scale(${baseScale() * userZoom})`;
   }
   addEventListener("resize", fit); fit();
+  ["gesturestart", "gesturechange", "gestureend"].forEach(t =>
+    document.addEventListener(t, e => e.preventDefault(), { passive: false }));
 
   let toastT;
   function toast(msg) {
@@ -340,6 +351,7 @@
     $("pgnum").textContent = `${cur + 1} / ${slides.length}`;
     location.hash = String(cur + 1);
     markGrid();
+    if (userZoom > 1.001) { userZoom = 1; panX = panY = 0; fit(); }
   }
   function next() { go(cur + 1); }
   function prev() { go(cur - 1); }
@@ -355,11 +367,11 @@
     $("grid").classList.toggle("show", show ?? !$("grid").classList.contains("show"));
   }
   function zoomBy(f) {
-    zoom = Math.max(0.5, Math.min(2.5, +(zoom * f).toFixed(3)));
+    userZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +(userZoom * f).toFixed(3)));
     fit();
-    toast(`Zoom ${Math.round(zoom * 100)}%`);
+    toast(`Zoom ${Math.round(userZoom * 100)}%`);
   }
-  function zoomReset() { zoom = 1; fit(); toast("Zoom 100%"); }
+  function zoomReset() { userZoom = 1; panX = panY = 0; fit(); toast("Zoom 100%"); }
 
   slides.forEach((sl, i) => {
     const it = document.createElement("div");
@@ -398,10 +410,68 @@
     }
   });
 
-  let sx = 0, sy = 0;
-  viewportEl.addEventListener("pointerdown", e => { if (uiTouch(e.target)) return; sx = e.clientX; sy = e.clientY; });
-  viewportEl.addEventListener("pointerup", e => {
+  const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  const mid = (a, b) => ({ x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 });
+  let pinch = null, drag = null, lastTap = null, hadPinch = false;
+
+  viewportEl.addEventListener("touchstart", e => {
     if (uiTouch(e.target)) return;
+    if (e.touches.length >= 2) {
+      e.preventDefault();
+      const a = e.touches[0], b = e.touches[1];
+      pinch = { dist: dist(a, b), zoom: userZoom, panX, panY, mid: mid(a, b) };
+      hadPinch = true;
+      drag = null;
+    } else if (e.touches.length === 1 && userZoom > 1.01) {
+      drag = { x: e.touches[0].clientX, y: e.touches[0].clientY, panX, panY };
+    }
+  }, { passive: false });
+
+  viewportEl.addEventListener("touchmove", e => {
+    if (pinch && e.touches.length >= 2) {
+      e.preventDefault();
+      const a = e.touches[0], b = e.touches[1], m = mid(a, b);
+      userZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, pinch.zoom * (dist(a, b) / pinch.dist)));
+      panX = pinch.panX + (m.x - pinch.mid.x);
+      panY = pinch.panY + (m.y - pinch.mid.y);
+      fit();
+    } else if (drag && e.touches.length === 1 && userZoom > 1.01) {
+      e.preventDefault();
+      panX = drag.panX + (e.touches[0].clientX - drag.x);
+      panY = drag.panY + (e.touches[0].clientY - drag.y);
+      fit();
+    }
+  }, { passive: false });
+
+  viewportEl.addEventListener("touchend", e => {
+    if (e.touches.length < 2) pinch = null;
+    if (e.touches.length === 0) {
+      drag = null;
+      if (hadPinch) { hadPinch = false; return; }
+      if (uiTouch(e.target) || e.changedTouches.length !== 1) return;
+      const t = e.changedTouches[0], now = Date.now();
+      if (lastTap && now - lastTap.t < 300 && Math.hypot(t.clientX - lastTap.x, t.clientY - lastTap.y) < 44) {
+        e.preventDefault();
+        if (userZoom > 1.05) { userZoom = 1; panX = panY = 0; }
+        else {
+          userZoom = 2;
+          panX = (innerWidth / 2 - t.clientX);
+          panY = (innerHeight / 2 - t.clientY);
+        }
+        fit();
+        lastTap = null;
+      } else lastTap = { t: now, x: t.clientX, y: t.clientY };
+    }
+  }, { passive: false });
+
+  let sx = 0, sy = 0, trackingSwipe = false;
+  viewportEl.addEventListener("pointerdown", e => {
+    if (uiTouch(e.target) || userZoom > 1.01 || pinch) { trackingSwipe = false; return; }
+    trackingSwipe = true; sx = e.clientX; sy = e.clientY;
+  });
+  viewportEl.addEventListener("pointerup", e => {
+    if (!trackingSwipe || uiTouch(e.target) || userZoom > 1.01 || pinch || hadPinch) { trackingSwipe = false; return; }
+    trackingSwipe = false;
     const dx = e.clientX - sx, dy = e.clientY - sy;
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); }
   });
